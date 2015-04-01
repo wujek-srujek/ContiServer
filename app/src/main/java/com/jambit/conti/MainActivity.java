@@ -17,6 +17,7 @@ import android.view.ViewTreeObserver;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.jambit.conti.ccss.CCSS;
 import com.jambit.conti.ccss.TouchListener;
@@ -26,6 +27,8 @@ public class MainActivity extends ActionBarActivity {
 
     private View appView;
 
+    private TextView fpsView;
+
     private Bitmap bitmap;
 
     private Canvas canvas;
@@ -33,6 +36,8 @@ public class MainActivity extends ActionBarActivity {
     private CCSS ccss;
 
     private Handler handler;
+
+    private FpsCounter fpsCounter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +52,8 @@ public class MainActivity extends ActionBarActivity {
     }
 
     private void updateMirror() {
+        fpsCounter.inc();
+        fpsView.setText("" + fpsCounter.getFps());
         appView.draw(canvas);
 
         bitmap.copyPixelsToBuffer(ccss.getBuffer());
@@ -75,6 +82,9 @@ public class MainActivity extends ActionBarActivity {
 
             appView.setOnTouchListener(new ColorChanger(width, height));
             appView.setBackgroundColor(Color.WHITE);
+
+            fpsCounter = new FpsCounter();
+            fpsView = (TextView) findViewById(R.id.fps);
 
             final WebView webView = (WebView) findViewById(R.id.web);
             webView.setWebViewClient(new WebViewClient() {
