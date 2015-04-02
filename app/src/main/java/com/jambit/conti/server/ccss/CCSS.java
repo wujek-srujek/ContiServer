@@ -1,4 +1,4 @@
-package com.jambit.conti.ccss;
+package com.jambit.conti.server.ccss;
 
 
 import java.nio.ByteBuffer;
@@ -12,13 +12,10 @@ public class CCSS {
 
     private final ByteBuffer buffer;
 
-    private final MirrorScreen mirrorScreen;
-
     private TouchListener touchListener;
 
-    public CCSS(int capacity, MirrorScreen mirrorScreen) {
+    public CCSS(int capacity) {
         buffer = ByteBuffer.allocateDirect(capacity).order(ByteOrder.nativeOrder());
-        this.mirrorScreen = mirrorScreen;
     }
 
     public void setTouchListener(TouchListener touchListener) {
@@ -33,9 +30,8 @@ public class CCSS {
         // make ready for reading
         buffer.flip();
 
-        // the buffer has been written to, now it's time to send it somewhere and render somehow
-        // this would actually perform network I/O and send the buffer to the real display
-        mirrorScreen.update(buffer);
+        // the buffer has been written to, now it's time to send it
+        // TODO network I/O
 
         // clear for subsequent usage
         buffer.clear();

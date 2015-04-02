@@ -1,4 +1,4 @@
-package com.jambit.conti.ccss;
+package com.jambit.conti.server.ccss;
 
 
 public interface TouchListener {

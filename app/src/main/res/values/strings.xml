@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">Conti</string>
+    <string name="app_name">ContiServer</string>
     <string name="title_activity_main">MainActivity</string>
 </resources>

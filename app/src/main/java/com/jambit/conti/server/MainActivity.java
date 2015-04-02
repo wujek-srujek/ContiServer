@@ -1,11 +1,10 @@
-package com.jambit.conti;
+package com.jambit.conti.server;
 
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -16,18 +15,14 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.ImageView;
-import android.widget.TextView;
 
-import com.jambit.conti.ccss.CCSS;
-import com.jambit.conti.ccss.TouchListener;
+import com.jambit.conti.server.ccss.CCSS;
+import com.jambit.conti.server.ccss.TouchListener;
 
 
 public class MainActivity extends ActionBarActivity {
 
     private View appView;
-
-    private TextView fpsView;
 
     private Bitmap bitmap;
 
@@ -36,8 +31,6 @@ public class MainActivity extends ActionBarActivity {
     private CCSS ccss;
 
     private Handler handler;
-
-    private FpsCounter fpsCounter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,8 +45,6 @@ public class MainActivity extends ActionBarActivity {
     }
 
     private void updateMirror() {
-        fpsCounter.inc();
-        fpsView.setText("" + fpsCounter.getFps());
         appView.draw(canvas);
 
         bitmap.copyPixelsToBuffer(ccss.getBuffer());
@@ -83,9 +74,6 @@ public class MainActivity extends ActionBarActivity {
             appView.setOnTouchListener(new ColorChanger(width, height));
             appView.setBackgroundColor(Color.WHITE);
 
-            fpsCounter = new FpsCounter();
-            fpsView = (TextView) findViewById(R.id.fps);
-
             final WebView webView = (WebView) findViewById(R.id.web);
             webView.setWebViewClient(new WebViewClient() {
 
@@ -110,22 +98,12 @@ public class MainActivity extends ActionBarActivity {
             bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
             canvas = new Canvas(bitmap);
 
-            // prepare the mirror bitmap to be updated
-            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            BitmapDrawable bitmapDrawable = new BitmapDrawable(getResources(), bitmap);
-            ImageView mirrorView = (ImageView) findViewById(R.id.mirror);
-            mirrorView.setImageDrawable(bitmapDrawable);
-
-            // prepare the touch detector (mirror side)
-            View touchDetector = findViewById(R.id.touch);
-            touchDetector.setOnTouchListener(new TouchForwarder(width, height));
-
             // 4 is ARGB - the generated images will be 32bit bitmaps
-            ccss = new CCSS(width * height * 4, new BitmapDrawableMirrorScreen(bitmapDrawable));
+            ccss = new CCSS(width * height * 4);
             ccss.setTouchListener(new LocalTouchDispatcher(appView));
 
             // move the app off-screen - the real app should not be shown
-            appView.setX(-width);
+//            appView.setX(-width);
 
             // start
             updateMirror();
