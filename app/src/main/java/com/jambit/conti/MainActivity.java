@@ -124,6 +124,9 @@ public class MainActivity extends ActionBarActivity {
             ccss = new CCSS(width * height * 4, new BitmapDrawableMirrorScreen(bitmapDrawable));
             ccss.setTouchListener(new LocalTouchDispatcher(appView));
 
+            // move the app off-screen - the real app should not be shown
+            appView.setX(-width);
+
             // start
             updateMirror();
 
