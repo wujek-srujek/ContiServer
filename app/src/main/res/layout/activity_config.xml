@@ -1,0 +1,33 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_margin="16dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                tools:context="com.jambit.conti.server.ConfigActivity"
+                tools:ignore="HardcodedText,PxUsage">
+
+    <TextView
+        android:id="@+id/label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:labelFor="@+id/port"
+        android:text="Port"
+        android:textSize="20sp"/>
+
+    <EditText
+        android:id="@+id/port"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@+id/label"
+        android:layout_toRightOf="@+id/label"
+        android:digits="0123456789"
+        android:inputType="number"/>
+
+    <Button
+        android:id="@+id/start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/port"
+        android:text="Start"/>
+
+</RelativeLayout>

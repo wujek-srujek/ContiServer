@@ -15,12 +15,21 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.TextView;
 
-import com.jambit.conti.server.ccss.CCSS;
-import com.jambit.conti.server.ccss.TouchListener;
+import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 
 public class MainActivity extends ActionBarActivity {
+
+    public static final String PORT_EXTRA = "portExtra";
 
     private View appView;
 
@@ -30,7 +39,9 @@ public class MainActivity extends ActionBarActivity {
 
     private CCSS ccss;
 
-    private Handler handler;
+    private Handler mainThreadHandler;
+
+    private Executor networkingExecutor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,24 +51,38 @@ public class MainActivity extends ActionBarActivity {
 
         appView = findViewById(R.id.app);
         appView.getViewTreeObserver().addOnPreDrawListener(new StartingPreDrawListener());
-
-        handler = new Handler(Looper.getMainLooper());
     }
 
     private void updateMirror() {
-        appView.draw(canvas);
+        if (ccss.hasConnection()) {
+            appView.draw(canvas);
 
-        bitmap.copyPixelsToBuffer(ccss.getBuffer());
-        ccss.commit();
+            networkingExecutor.execute(new Runnable() {
 
-        // schedule next update
-        handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    ccss.sendUpdate(bitmap);
 
-            @Override
-            public void run() {
-                updateMirror();
-            }
-        });
+                    // schedule next update
+                    mainThreadHandler.post(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            updateMirror();
+                        }
+                    });
+                }
+            });
+        } else {
+            // try again in a second
+            mainThreadHandler.postDelayed(new Runnable() {
+
+                @Override
+                public void run() {
+                    updateMirror();
+                }
+            }, 1000);
+        }
     }
 
     // the dimensions are known in the observer right before first drawing
@@ -68,7 +93,27 @@ public class MainActivity extends ActionBarActivity {
         public boolean onPreDraw() {
             appView.getViewTreeObserver().removeOnPreDrawListener(this);
 
-            int width = appView.getWidth();
+            int port = getIntent().getIntExtra(PORT_EXTRA, -1);
+            String ip = "<unknown ip>";
+            try {
+                for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
+                    NetworkInterface intf = en.nextElement();
+                    for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
+                        InetAddress inetAddress = enumIpAddr.nextElement();
+                        if (!inetAddress.isLoopbackAddress() && inetAddress instanceof Inet4Address) {
+                            ip = inetAddress.getHostAddress();
+                            break;
+                        }
+                    }
+                }
+            } catch (SocketException e) {
+                throw new RuntimeException();
+            }
+
+            ((TextView) findViewById(R.id.info)).setText(ip + ":" + port);
+
+            final float x = appView.getX();
+            final int width = appView.getWidth();
             int height = appView.getHeight();
 
             appView.setOnTouchListener(new ColorChanger(width, height));
@@ -86,11 +131,19 @@ public class MainActivity extends ActionBarActivity {
             });
             webView.loadUrl("http://www.google.com");
 
-            findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
+            findViewById(R.id.switcher).setOnClickListener(new View.OnClickListener() {
 
                 @Override
                 public void onClick(View v) {
                     webView.setVisibility(webView.getVisibility() == View.INVISIBLE ? View.VISIBLE : View.INVISIBLE);
+                }
+            });
+
+            findViewById(R.id.move).setOnClickListener(new View.OnClickListener() {
+
+                @Override
+                public void onClick(View v) {
+                    appView.animate().x(appView.getX() < 0 ? x : -2 * width);
                 }
             });
 
@@ -99,11 +152,15 @@ public class MainActivity extends ActionBarActivity {
             canvas = new Canvas(bitmap);
 
             // 4 is ARGB - the generated images will be 32bit bitmaps
-            ccss = new CCSS(width * height * 4);
-            ccss.setTouchListener(new LocalTouchDispatcher(appView));
+            try {
+                ccss = new CCSS(width * height * 4, port);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            ccss.setTouchListener(new LocalTouchDispatcher());
 
-            // move the app off-screen - the real app should not be shown
-//            appView.setX(-width);
+            mainThreadHandler = new Handler(Looper.getMainLooper());
+            networkingExecutor = Executors.newSingleThreadExecutor();
 
             // start
             updateMirror();
@@ -161,41 +218,20 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
-    private class TouchForwarder implements View.OnTouchListener {
-
-        private final Rect bounds;
-
-        public TouchForwarder(int viewWidth, int viewHeight) {
-            bounds = new Rect(0, 0, viewWidth, viewHeight);
-        }
-
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            float x = event.getX();
-            float y = event.getY();
-            if (bounds.contains((int) x, (int) y)) {
-                ccss.generateTouch((int) x, (int) y, event.getActionMasked());
-            }
-
-            return true;
-        }
-    }
-
     private class LocalTouchDispatcher implements TouchListener {
 
-        private final View view;
-
-        public LocalTouchDispatcher(View view) {
-            this.view = view;
-        }
-
         @Override
-        public void onTouch(int x, int y, int type) {
-            MotionEvent motionEvent = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), type, x, y, 0);
+        public void onTouch(final int x, final int y, final int type) {
+            mainThreadHandler.post(new Runnable() {
 
-            view.dispatchTouchEvent(motionEvent);
+                @Override
+                public void run() {
+                    MotionEvent motionEvent = MotionEvent.obtain(SystemClock.uptimeMillis(), SystemClock.uptimeMillis(), type, x, y, 0);
+                    appView.dispatchTouchEvent(motionEvent);
 
-            motionEvent.recycle();
+                    motionEvent.recycle();
+                }
+            });
         }
     }
 }

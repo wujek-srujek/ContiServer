@@ -1,28 +1,49 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
-                android:id="@+id/app"
                 android:layout_margin="16dp"
-                android:layout_width="800px"
-                android:layout_height="600px"
-                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 tools:context="com.jambit.conti.server.MainActivity"
                 tools:ignore="HardcodedText,PxUsage">
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/border"/>
+    <TextView
+        android:id="@+id/info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
 
-    <WebView
-        android:id="@+id/web"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="invisible"/>
+    <RelativeLayout
+        android:id="@+id/app"
+        android:layout_margin="16dp"
+        android:layout_width="800px"
+        android:layout_height="600px"
+        android:layout_below="@+id/info"
+        android:layout_centerHorizontal="true">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/border"/>
+
+        <WebView
+            android:id="@+id/web"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="invisible"/>
+
+        <Button
+            android:id="@+id/switcher"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Switch"/>
+
+    </RelativeLayout>
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/move"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Blah"/>
+        android:layout_below="@+id/app"
+        android:layout_centerHorizontal="true"
+        android:text="Move"/>
 
 </RelativeLayout>
